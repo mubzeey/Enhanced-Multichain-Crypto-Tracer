@@ -1,0 +1,154 @@
+import requests
+import pandas as pd
+from web3 import Web3
+import networkx as nx
+
+# === CONFIG ===
+INFURA_KEY = '74eb8844b0934454*******ad74e3d55'
+ETHERSCAN_KEY_ETH = 'Q7QWJW*******J53GVFG8A1N9IP21PFBMN'
+ETHERSCAN_KEY_ARB = '21IVRQNWYKGTGUK89USN*******MNPJB6R'
+ETHERSCAN_KEY_OPT = '357GWKAF56******6P7HVS*******P13K'
+BITQUERY_KEY = 'ory_at_aor3ImP3aNR******j-lamuIUak8ebSG7dGt2O4m5Y.chGTywCn6zOOdi1oeaYh7Px0ytjTcVHAF4qy3YpMwD0'
+COVALENT_KEY = 'cqt_rQPCFPHGfmptPhy*******8PF9gbP'  # Empty means we’ll use free endpoints
+
+SEED = '0x76135D845cc090530845a0*******9C772F21303'
+MAX_HOPS = 2  # adjust for safety
+
+STATIC_CEX = [
+    "0x3f5ce5fbfe3e9af3971dd833d26ba9b5c936f0be",
+    "0x28c6c06298d514db089934071355e5743bf21d60",
+    "0x742d35cc6634c0532925a3b844bc454e4438f44",
+    "0x564286362092d8e7936f0549571a803b203aaced"
+]
+STATIC_CEX = [a.lower() for a in STATIC_CEX]
+
+w3 = Web3(Web3.HTTPProvider(f'https://mainnet.infura.io/v3/{INFURA_KEY}'))
+print(f"Loaded {len(STATIC_CEX)} static CEX ✅")
+
+# === CLASSIFY ===
+def classify(address):
+    address = address.lower()
+    if address in STATIC_CEX:
+        return 'Static CEX'
+    try:
+        code = w3.eth.get_code(Web3.to_checksum_address(address))
+        if code != b'':
+            return 'Contract'
+    except:
+        pass
+    url = f"https://api.etherscan.io/api?module=account&action=txlist&address={address}&apikey={ETHERSCAN_KEY_ETH}"
+    txs = requests.get(url).json().get('result', [])
+    if len(txs) >= 5000:
+        return 'Likely Hot Wallet'
+    return 'EOA'
+
+# === GRAPH BUILD ===
+edges = []
+seen = set()
+
+def crawl_etherscan(chain, key, base_url):
+    queue = [(SEED.lower(), 0)]
+    while queue:
+        current, depth = queue.pop(0)
+        if current in seen or depth > MAX_HOPS:
+            continue
+        seen.add(current)
+        print(f"🔍 Crawling {chain} Etherscan: {current} | Depth {depth}")
+        url = f"{base_url}?module=account&action=txlist&address={current}&apikey={key}"
+        txs = requests.get(url).json().get('result', [])
+        for tx in txs[:5]:
+            f = tx['from'].lower()
+            t = tx['to'].lower() if tx['to'] else ''
+            v = int(tx['value']) / 1e18
+            if v == 0 or not t:
+                continue
+            edges.append((f, t, v, chain))
+            if t not in seen:
+                queue.append((t, depth + 1))
+
+# === MAIN ETHERSCAN TRACES ===
+crawl_etherscan('ethereum', ETHERSCAN_KEY_ETH, 'https://api.etherscan.io/api')
+crawl_etherscan('arbitrum', ETHERSCAN_KEY_ARB, 'https://api.arbiscan.io/api')
+crawl_etherscan('optimism', ETHERSCAN_KEY_OPT, 'https://api-optimistic.etherscan.io/api')
+
+# === BITQUERY ERC-20 ===
+bitquery_url = 'https://streaming.bitquery.io/graphql'
+query = {
+  "query": """
+    query ($address: String!) {
+      EVM(dataset: combined, network: eth) {
+        Transfers(
+          where: {
+            any: [
+              {Transfer: {Sender: {is: $address}}},
+              {Transfer: {Receiver: {is: $address}}}
+            ],
+            Transfer: {Currency: {Native: false, Fungible: true}, Amount: {gt: "0"}}
+          },
+          limit: {count: 5}
+        ) {
+          Transfer {
+            Sender
+            Receiver
+            Amount
+            Currency { Symbol }
+          }
+        }
+      }
+    }
+  """,
+  "variables": {"address": SEED}
+}
+headers = {
+  'Authorization': f'Bearer {BITQUERY_KEY}',
+  'Content-Type': 'application/json'
+}
+resp = requests.post(bitquery_url, json=query, headers=headers)
+print(f"Bitquery ERC-20 eth status: {resp.status_code}")
+
+bitquery_ok = False
+if resp.ok:
+    transfers = resp.json()['data']['EVM']['Transfers']
+    if transfers:
+        bitquery_ok = True
+        for tx in transfers:
+            f = tx['Transfer']['Sender'].lower()
+            t = tx['Transfer']['Receiver'].lower()
+            v = float(tx['Transfer']['Amount'])
+            edges.append((f, t, v, 'ethereum'))
+    else:
+        print("⚠️ No Bitquery ERC-20 transfers found.")
+
+# === COVALENT FALLBACK ===
+if not bitquery_ok:
+    print("🔁 Using Covalent fallback...")
+    for chain, chain_id in [('ethereum', 1), ('arbitrum', 42161), ('optimism', 10)]:
+        url = f"https://api.covalenthq.com/v1/{chain_id}/address/{SEED}/transactions_v3/?key={COVALENT_KEY}"
+        resp = requests.get(url)
+        print(f"Covalent {chain} status: {resp.status_code}")
+        if resp.ok:
+            items = resp.json()['data']['items']
+            for tx in items[:5]:
+                f = tx['from_address'].lower()
+                t = tx['to_address'].lower() if tx['to_address'] else ''
+                v = int(tx['value']) / 1e18 if tx['value'] else 0
+                if v == 0 or not t:
+                    continue
+                edges.append((f, t, v, chain))
+
+# === SAVE ===
+df = pd.DataFrame(edges, columns=['from', 'to', 'value', 'chain'])
+df.to_csv('trace_combined.csv', index=False)
+print("✅ Saved trace_combined.csv with chain column")
+
+addresses = pd.unique(df[['from', 'to']].values.ravel())
+results = []
+for addr in addresses:
+    results.append({'address': addr, 'class': classify(addr)})
+df_nodes = pd.DataFrame(results)
+df_nodes.to_csv('classified_nodes.csv', index=False)
+print("✅ Saved classified_nodes.csv with wallet classes")
+
+G = nx.from_pandas_edgelist(df, 'from', 'to', edge_attr=['value', 'chain'])
+nx.write_gexf(G, 'trace_graph.gexf')
+print("✅ Saved trace_graph.gexf for Gephi Lite")
