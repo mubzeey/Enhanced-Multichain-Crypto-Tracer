@@ -1,0 +1,67 @@
+<?xml version='1.0' encoding='utf-8'?>
+<gexf xmlns="http://www.gexf.net/1.2draft" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.gexf.net/1.2draft http://www.gexf.net/1.2draft/gexf.xsd" version="1.2">
+  <meta lastmodifieddate="2025-06-29">
+    <creator>NetworkX 3.5</creator>
+  </meta>
+  <graph defaultedgetype="undirected" mode="static" name="">
+    <attributes mode="static" class="edge">
+      <attribute id="0" title="value" type="double" />
+      <attribute id="1" title="chain" type="string" />
+    </attributes>
+    <nodes>
+      <node id="0xe0f0cfde7ee664943906f17f7f14342e76a5cec7" label="0xe0f0cfde7ee664943906f17f7f14342e76a5cec7" />
+      <node id="0x76135d845cc090530845a0aa22feb9c772f21303" label="0x76135d845cc090530845a0aa22feb9c772f21303" />
+      <node id="0x51aa7f7ea3ab9999702a9bb4400154a227f8d945" label="0x51aa7f7ea3ab9999702a9bb4400154a227f8d945" />
+      <node id="0x416299aade6443e6f6e8ab67126e65a7f606eef5" label="0x416299aade6443e6f6e8ab67126e65a7f606eef5" />
+      <node id="0x58ceb94b0adc74a5bcea5980ebe1770f5977b26a" label="0x58ceb94b0adc74a5bcea5980ebe1770f5977b26a" />
+      <node id="0x88c8cc5afe58fb5cf3644a7ccdd725e681eea95c" label="0x88c8cc5afe58fb5cf3644a7ccdd725e681eea95c" />
+      <node id="0x74229b98c87fb2fbfca57d3757fe55bb757b70ae" label="0x74229b98c87fb2fbfca57d3757fe55bb757b70ae" />
+      <node id="0x182e045dc51135a7d256ab5299fec2d2a1636b0d" label="0x182e045dc51135a7d256ab5299fec2d2a1636b0d" />
+      <node id="0x9e3fc8cab65a41139f96cf258a6cd64d52ce8c80" label="0x9e3fc8cab65a41139f96cf258a6cd64d52ce8c80" />
+    </nodes>
+    <edges>
+      <edge source="0xe0f0cfde7ee664943906f17f7f14342e76a5cec7" target="0x76135d845cc090530845a0aa22feb9c772f21303" id="0">
+        <attvalues>
+          <attvalue for="0" value="0.0283736" />
+          <attvalue for="1" value="ethereum" />
+        </attvalues>
+      </edge>
+      <edge source="0x76135d845cc090530845a0aa22feb9c772f21303" target="0x51aa7f7ea3ab9999702a9bb4400154a227f8d945" id="1">
+        <attvalues>
+          <attvalue for="0" value="0.014687606" />
+          <attvalue for="1" value="ethereum" />
+        </attvalues>
+      </edge>
+      <edge source="0x76135d845cc090530845a0aa22feb9c772f21303" target="0x74229b98c87fb2fbfca57d3757fe55bb757b70ae" id="2">
+        <attvalues>
+          <attvalue for="0" value="0.000438294956726753" />
+          <attvalue for="1" value="arbitrum" />
+        </attvalues>
+      </edge>
+      <edge source="0x76135d845cc090530845a0aa22feb9c772f21303" target="0x182e045dc51135a7d256ab5299fec2d2a1636b0d" id="3">
+        <attvalues>
+          <attvalue for="0" value="5.2326920989181e-05" />
+          <attvalue for="1" value="arbitrum" />
+        </attvalues>
+      </edge>
+      <edge source="0x76135d845cc090530845a0aa22feb9c772f21303" target="0x9e3fc8cab65a41139f96cf258a6cd64d52ce8c80" id="4">
+        <attvalues>
+          <attvalue for="0" value="0.004458427445054367" />
+          <attvalue for="1" value="arbitrum" />
+        </attvalues>
+      </edge>
+      <edge source="0x51aa7f7ea3ab9999702a9bb4400154a227f8d945" target="0x416299aade6443e6f6e8ab67126e65a7f606eef5" id="5">
+        <attvalues>
+          <attvalue for="0" value="0.00448755" />
+          <attvalue for="1" value="ethereum" />
+        </attvalues>
+      </edge>
+      <edge source="0x58ceb94b0adc74a5bcea5980ebe1770f5977b26a" target="0x88c8cc5afe58fb5cf3644a7ccdd725e681eea95c" id="6">
+        <attvalues>
+          <attvalue for="0" value="0.01" />
+          <attvalue for="1" value="arbitrum" />
+        </attvalues>
+      </edge>
+    </edges>
+  </graph>
+</gexf>
